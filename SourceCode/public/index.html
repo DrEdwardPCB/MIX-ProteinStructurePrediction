@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Comp5212 Group13 Protein Visualization</title>
+    <!--library loading-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+    <script src="./library/numpyjs-frontend/npyjs.js"></script>
+    <script src="./library/threejs/three.js-master/build/three.js"></script>
+    <script src="./library/threejs/three.js-master/examples/js/controls/OrbitControls.js"></script>
+    <script src="./library/threejs/three.js-master/examples/js/controls/TrackballControls.js"></script>
+    <script src="./library/threejs/Custom/PDBLoader.js"></script>
+    <script src="./library/threejs/three.js-master/examples/js/renderers/CSS2DRenderer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+    <script src='./library/mathjs/mathjs.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js'></script>
+    <script>
+        //check if the api available
+        $(document).ready(() => {
+            if (window.File && window.FileReader && window.FileList && window.Blob) {
+                // Great success! All the File APIs are supported.
+            } else {
+                alert('The File APIs are not fully supported in this browser.');
+                window.history.back()
+            }
+            $("#sequenceSubmit").submit(function (e) {
+                console.log('submitting')
+                e.preventDefault(); // avoid to execute the actual submit of the form.
+
+                var form = $(this);
+                console.log(form.serialize())
+                var url = 'http://ec2.ekhome.life:3005/in'
+                console.log(url)
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: form.serialize(), // serializes the form's elements.
+                    success: function (data) {
+                        alert(data); // show response from the php script.
+                        console.log(data)
+                    }
+                });
+
+            });
+
+            $(".runPrediction").on('click',function (e) {
+                console.log('submitting')
+                e.preventDefault(); // avoid to execute the actual submit of the form.
+                //console.log(form.serialize())
+                var url = 'http://ec2.ekhome.life:3005/py'
+                //console.log(url)
+                //console.log($(this))
+                console.log($(this).attr('framework'))
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    data: {framework:$(this).attr('framework')}, // serializes the form's elements.
+                    success: function (data) {
+                        alert('done'); // show response from the php script.
+                        console.log(data)
+                    }
+                });
+            });
+           
+        })
+    </script>
+    <script src="./library/threejs/Custom/renderY.js"></script>
+    <script src="./library/threejs/Custom/renderPDB.js"></script>
+    <style>
+        .example {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .flex-fill {
+            flex: 1;
+        }
+
+        .ss-u {
+            background-color: grey;
+        }
+
+        .ss-a {
+            background-color: crimson;
+        }
+
+        .ss-b {
+            background-color: skyblue;
+        }
+
+        .ss-t {
+            background-color: greenyellow;
+        }
+    </style>
+</head>
+
+<body style='width:100vw; height:100vh'>
+    <div class='container' style='width:100vw !important; height:100vh;margin:0;padding:0;max-width: 100vw;'>
+        <div class='row' style="height:70vh;width:100%;max-height: 70vh;">
+            <!--predicted-->
+            <div class='col-6 d-flex flex-grow-1 flex-column flex-shrink-1' style='max-height: 70vh;'>
+                <div class='row'>
+                    <div class='col' style="height:30px">
+                        <h5>predicted structure</h5>
+                    </div>
+                </div>
+                <div class='row' style="height : calc(70vh - 30px - 75px - 15px)  !important;">
+                    <div class='col' id='predictionContainer'
+                        style='background-color: aqua;min-height : calc(70vh - 30px - 75px - 10px)  !important; max-height : calc(70vh - 30px - 50px - 15px)  !important; padding:0px'>
+
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col' style='background-color: skyblue;'>
+                        <div class="PSScontainer"
+                            style='height:90px; width:100%; overflow-x: scroll; overflow-y:hidden; display:flex; flex-direction: row; flex-wrap: nowrap;'>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--actual-->
+            <div class='col-6 d-flex flex-grow-1 flex-column flex-shrink-1' style='max-height: 70vh;'>
+                <div class='row'>
+                    <div class='col' style="height:30px">
+                        <h5>actual structure</h5>
+                    </div>
+                </div>
+                <div class='row' style="height : calc(70vh - 30px - 75px - 15px)  !important;">
+                    <div class='col' id='actualContainer'
+                        style='background-color: aqua;min-height : calc(70vh - 30px - 75px - 10px)  !important; max-height : calc(70vh - 30px - 50px - 15px)  !important; padding:0px'>
+
+                    </div>
+                </div>
+                <div class='row'>
+                    <div class='col' style='background-color: skyblue; padding:0px'>
+                        <div class="ASScontainer"
+                            style='height:90px; width:100%; overflow-x: scroll; overflow-y:hidden; display:flex; flex-direction: row; flex-wrap: nowrap;'>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class='row' style="height:30vh;width:100%">
+            <div class='col-6'>
+                <div class='npyfilereader'>
+                    <div class='example'>
+                        <input type="file" id="files" name="files[]" multiple />
+                        <output id="list"></output>
+                    </div>
+                </div>
+                <div>
+                    <form action='/in' id='sequenceSubmit'>
+                        <h6>predict by putting text in it</h6>
+                        <input type='textarea' style="width:100%" name='Sequence'>
+                        <input type='submit' value='Submit'>
+                    </form>
+                    <h6>run prediction</h6>
+                    <Button class='runPrediction' framework='tf18'>tf-18</Button>
+                    <Button class='runPrediction' framework='tf35'>tf-35</Button>
+                    <Button class='runPrediction' framework='pt'>pt</Button>
+                    <h6>load prediction result</h6>
+                    <a href="http://ec2.ekhome.life:3005/out/receivedSequence.npy" download="PredictedOutput.npy"> 
+                        <button type="button">Download predicted output</button> 
+                    </a> 
+                </div>
+            </div>
+            <div class='col-6'>
+                <div class='pdbfilereader'>
+                    <div class='example'>
+                        <input type="file" id="filespdb" name="files[]" multiple />
+                        <output id="list1" style='overflow-y:scroll;height:100px'></output>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        
+
+        function handleFileSelect(evt) {
+            var files = evt.target.files; // FileList object
+
+            // files is a FileList of File objects. List some properties.
+            var output = [];
+
+            var reader = new FileReader();
+            reader.onload = function () {
+                console.log(reader.result)
+                var npyparser = new npyjs()
+                npyparser.load(true, reader.result, (res) => {
+                    console.log(res)
+                    //construct tensor
+                    console.log(res.data)
+                    console.log(Array.from(res.data))
+                    var predicted = tf.tensor(Array.from(res.data), res.shape, res.dtype)
+                    predicted.array().then((a) => { console.log(a) })
+                    indexRenderY(predicted)
+
+                })
+            }
+            for (var i = 0, f; f = files[i]; i++) {
+                output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+                    f.size, ' bytes, last modified: ',
+                    f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+                    '</li>');
+                reader.readAsArrayBuffer(f)
+
+            }
+            document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+        }
+
+        document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+        function handlePDBFileSelect(evt) {
+            var files = evt.target.files; // FileList object
+
+            // files is a FileList of File objects. List some properties.
+            var output = [];
+
+            var reader = new FileReader();
+            reader.onload = function () {
+                LOADEDPDB = reader.result
+                var loader = new PDBLoader()
+                //getting PDB structure
+                var parsed = loader.parse(LOADEDPDB)
+                var reduced = parsed.map(e => { return e.chain }).reduce((accum, curr) => {
+                    if (accum.includes(curr)) {
+                        return accum
+                    } else {
+                        accum.push(curr)
+                        return accum
+                    }
+                }, [])
+                console.log(reduced)
+                innerhtml = ''
+                reduced.forEach(e => {
+                    innerhtml += '<ul><button onclick="indexRenderPDB(' + '\'' + e + '\'' + ')">chain' + e + '</button></ul>'
+                })
+                document.getElementById('list1').innerHTML = innerhtml
+
+
+            }
+            for (var i = 0, f; f = files[i]; i++) {
+                output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+                    f.size, ' bytes, last modified: ',
+                    f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+                    '</li>');
+                console.log(f)
+                reader.readAsText(f)
+
+            }
+            //document.getElementById('list1').innerHTML = '<ul>' + output.join('') + '</ul>';
+        }
+        document.getElementById('filespdb').addEventListener('change', handlePDBFileSelect, false);
+
+        function indexRenderPDB(chain) {
+            $('#actualContainer').html('')
+            PDB3DOBJREF = buildPDBScene('actualContainer', LOADEDPDB, chain)
+            console.log(PDB3DOBJREF)
+            //convert obj to array
+            PDB3DOBJREF = Object.keys(PDB3DOBJREF).map((e, i) => {
+                return PDB3DOBJREF[e]
+            })
+            document.getElementsByClassName('ASScontainer')[0].innerHTML = ''
+            PDB3DOBJREF.forEach((e, i) => {
+                var mnuItem = document.createElement('button')
+                mnuItem.name = e.residue;
+                mnuItem.setAttribute('onclick', "pdbhighlight('" + e.position + "')")
+                mnuItem.setAttribute('position', e.position);
+                var ssname = e.mesh[0].userData.ss == undefined ? 'u' : e.mesh[0].userData.ss
+                mnuItem.innerHTML = '<div style="display:flexbox;flex-direction:column;flex:1;width:60px">' +
+                    '<div style="display:flex;flex-direction:row;flex:1">' +
+                    '<div style="flex:1; margin-right:5px">' + i + '</div>' +
+                    '<div style="flex:1">' + e.position + '</div>' +
+                    '</div>' +
+                    '<div style="flex:1">' + e.residue + '</div>' +
+                    '<div style="flex:1" class="ss-' + ssname + '">' + ssname + '</div>' +
+                    '</div>'
+                //mnuItem.addEventListener("click", pdbhighlight)
+                //console.log(document.getElementsByClassName('ASScontainer')[0])
+                document.getElementsByClassName('ASScontainer')[0].appendChild(mnuItem);
+            })
+        }
+        function pdbhighlight(position) {
+
+            PDB3DOBJREF.forEach(function (obj) { // loop through objects
+                obj.mesh.forEach(function (D3) {
+                    D3.material.emissive.setRGB(0, 0, 0);  // reset their emissive parameter to default (black)
+                    if (obj.position == position) {
+                        D3.material.emissive.setRGB(1, 1, 0);
+                    }
+                })
+            });
+
+        }
+        function indexRenderY(data) {
+            console.log('called')
+            $('#predictionContainer').html('')
+            PRED3DOBJREF = buildYScene('predictionContainer', data)
+            console.log(PRED3DOBJREF)
+            //convert obj to array
+            PRED3DOBJREF = Object.keys(PRED3DOBJREF).map((e, i) => {
+                return PRED3DOBJREF[e]
+            })
+            document.getElementsByClassName('PSScontainer')[0].innerHTML = ''
+            PRED3DOBJREF.forEach((e, i) => {
+                var mnuItem = document.createElement('button')
+                mnuItem.name = e.residue;
+                mnuItem.setAttribute('onclick', "predicthighlight('" + i + "')")
+                //mnuItem.setAttribute('position', e.position);
+                var ssname = e.ss == undefined ? 'u' : e.ss
+                mnuItem.innerHTML = '<div style="display:flexbox;flex-direction:column;flex:1;width:60px">' +
+                    '<div style="flex:1;">' + i + '</div>' +
+                    '<div style="flex:1" class="ss-' + ssname + '">' + ssname + '</div>' +
+                    '</div>'
+                //mnuItem.addEventListener("click", pdbhighlight)
+                //console.log(document.getElementsByClassName('PSScontainer')[0])
+                document.getElementsByClassName('PSScontainer')[0].appendChild(mnuItem);
+            })
+        }
+        function predicthighlight(position) {
+            PRED3DOBJREF.forEach(function (obj, i) { // loop through objects
+                obj.mesh.forEach(function (D3) {
+                    D3.material.emissive.setRGB(0, 0, 0);  // reset their emissive parameter to default (black)
+                    if (i == position) {
+                        D3.material.emissive.setRGB(1, 1, 0);
+                    }
+                })
+            });
+        }
+    </script>
+</body>
+
+</html>

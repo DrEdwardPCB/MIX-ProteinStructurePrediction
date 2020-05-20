@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<!--Author: Wong Yuk Ming Edward-->
+<html>
+
+<head>
+    <title>log2plot tf</title>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+</head>
+
+<body>
+    <form>
+        <input type='file' id="logfile" />
+    </form>
+    <Button id='submitBtn'>Submit</Button>
+    <div id=graphContainer>
+
+    </div>
+    <script>
+        $(document).ready(() => {
+            $('#submitBtn').on('click', () => {
+                var fileInput = document.getElementById('logfile')
+                var fr = new FileReader()
+                fr.onload = () => {
+                    var rawString = fr.result
+                    //console.log(rawString)
+                    var rawStringarr = rawString.split('\n')
+                    //console.log(rawStringarr)
+                    var x_val = []
+                    var yline = []
+                    var yentries = null
+                    for (var i = 0; i < rawStringarr.length; i++) {
+                        //console.log(rawStringarr[i])
+                        //console.log(rawStringarr[i].includes('Epoch'))
+                        if (rawStringarr[i].includes('Epoch')) {
+                            var thisx = rawStringarr[i].split(' ')[1].split('/')[0]
+                            var thisy = rawStringarr[i + 1].split('-')
+                            console.log(thisx)
+                            console.log(thisy)
+                            console.log('====================')
+                            if (thisx >= 2) {
+                                if (yentries == null) {
+                                    yentries = {}
+                                    for (var j = 2; j < thisy.length; j++) {
+                                        var data2log = thisy[j]
+                                        data2log = data2log.replace(' ', '')
+                                        data2log = data2log.replace('\r', '')
+                                        console.log(data2log)
+                                        data2log = data2log.split(':')
+                                        console.log(data2log)
+                                        yentries[data2log[0]] = [data2log[1]]
+                                    }
+                                }
+                                else {
+                                    for (var j = 2; j < thisy.length; j++) {
+                                        var data2log = thisy[j]
+                                        data2log = data2log.replace(' ', '')
+                                        data2log = data2log.replace('\r', '')
+                                        data2log = data2log.split(':')
+                                        yentries[data2log[0]].push(data2log[1])
+                                    }
+                                }
+
+                            }
+                            x_val.push(thisx)
+                            console.log(yentries)
+
+
+                        }
+                    }
+                    yline = Object.keys(yentries)
+                    html = ""
+                    for (var i = 0; i < yline.length; i++) {
+                        html += '<canvas id="' + yline[i] + '" width="1200" height="400"></canvas>'
+                        html += '<div>max:'+Math.max(...yentries[yline[i]].map((e) => { return parseFloat(e) }))+' ,min:'+Math.min(...yentries[yline[i]].map((e) => { return parseFloat(e) }))+'</div>'
+                    }
+                    $('#graphContainer').html(html)
+                    var chartlist = []
+
+
+                    for (var i = 0; i < yline.length; i++) {
+                        var data = {
+                            labels: x_val,
+                            datasets: [{
+                                label: yline[i],
+                                data: yentries[yline[i]].map((e) => { return parseFloat(e) })
+                            }
+                            ]
+
+                        }
+                        console.log(data)
+                        var ctx = $('#' + yline[i]);
+                        var chart = new Chart(ctx, {
+                            type: 'line',
+                            data: data,
+                            options: {
+                                responsive: false,
+                                maintainAspectRatio: true,
+                            }
+                        })
+                        chartlist.push(chart)
+                    }
+                }
+
+                fr.readAsText(fileInput.files[0])
+            })
+        })
+    </script>
+</body>
+
+</html>
