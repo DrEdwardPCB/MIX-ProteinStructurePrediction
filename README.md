@@ -1,6 +1,6 @@
 # Protein Prediction by machine learning
 
- This is the official github page of the HKUST-Comp5212 2020 Spring Group 13, Since the project has been submit on 19-12-2020, this page is made to document our project and hopefully bring an insight to later future on protein structure prediction
+ This is the official github page of the HKUST-Comp5212 2020 Spring Group 13, Since the project has been submit on 19-12-2020, this page is made to document our project and hopefully bring an insight to future studies on protein structure prediction
 
 ### Author
 - Wong Yuk Ming
