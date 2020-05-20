@@ -15,6 +15,12 @@
 - Lau Cheuk Nam
     - background: Computer Science
     - role: Model training, consultant, Video making
+## untracked dependencies
+
+- three.js(https://threejs.org/)
+    - used in 3D reconstruction
+- dssp(https://swift.cmbi.umcn.nl/gv/dssp/DSSP_3.html)
+    - used in producing y files for training the model 
 
 ## background knowledge
 
@@ -69,4 +75,7 @@ the most advance prediction system can only reach a prediction accuracy of aroun
 [![](http://img.youtube.com/vi/9Cb8jZgs7r8/0.jpg)](http://www.youtube.com/watch?v=9Cb8jZgs7r8 "")
 
 ### detailed report
+https://github.com/DrEdwardPCB/MIX-ProteinStructurePrediction/blob/master/Report/Comp5212_GP_13_Project_Report%20.pdf
 
+# Disclaimer
+this project is already submitted and if TA or professor sees this, this is not plagerism, this is the students decide to make the project open source to everyone and hope to benefit the ongoing research in this field
